@@ -1,7 +1,6 @@
 from sqlalchemy.orm import relationship
-
-from entity.model import Base
 from sqlalchemy import Column, Integer, String
+from .model import Base
 
 class Models(Base):
     __tablename__ = 'models'
@@ -9,7 +8,7 @@ class Models(Base):
     id      = Column(Integer, primary_key=True)
     name    = Column(String, unique=True)
     location= Column(String, unique=True)
-    train   = relationship('models', cascade="all,delete")
+    train   = relationship('trained_models', cascade="all,delete")
     
-    def __repr__(self) -> str:
-        return f"Models(id={self.id!r}, name={self.name!r}, location={self.location!r})"    
+    # def __repr__(self) -> str:
+    #     return f"Models(id={self.id!r}, name={self.name!r}, location={self.location!r})"    

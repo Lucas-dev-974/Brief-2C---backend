@@ -1,5 +1,4 @@
 from entity.model import Base
-# from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import Column, Integer, String
 
 class Users(Base):
