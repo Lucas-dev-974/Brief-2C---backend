@@ -1,4 +1,4 @@
-from entity.model import Base
+from entity.base import Base
 from sqlalchemy import Column, Integer, String
 
 class Users(Base):
@@ -10,4 +10,4 @@ class Users(Base):
     password = Column(String(300))
 
     def __repr__(self) -> str:
-        return f"Users(id={self.id!r}, name={self.name!r}, location={self.location!r})"    
+        return f"Users(id={self.id!r}, name={self.name!r}, location={self.location!r})"

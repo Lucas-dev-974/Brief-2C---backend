@@ -6,7 +6,7 @@ from utils          import getConfig
 engine  = create_engine('postgresql://' + getConfig('user') + ':' + getConfig('password') + '@localhost/' + getConfig('database') + '', echo=True)
 Session = sessionmaker(bind=engine)
 
-from entity._model        import Models,  Base
+from entity.model        import Models,  Base
 from entity.user          import Users,   Base
 from entity.classes       import Classes, Base
 from entity.images        import Images,  Base
