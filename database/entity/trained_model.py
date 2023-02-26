@@ -12,5 +12,6 @@ class TrainedModel(Base):
     trained_location= Column(String, unique=True)
     
     model_id    = Column(Integer, ForeignKey('models.id'))
-    on_classes  = relationship('trained_on')
-    predictions = relationship('predictions')
+    
+    # on_classes  = relationship('trained_on')
+    # predictions = relationship('predictions')
