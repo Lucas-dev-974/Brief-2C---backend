@@ -16,10 +16,7 @@ def toJson(data, model):
     json = []
 
     print(model_fields)
-    i = 0
     for dta in data:
-        print(getattr(dta, 'id'), model_fields[i])
-        i = i + 1
 
         model = {}
         for fields in model_fields:
