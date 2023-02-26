@@ -1,5 +1,5 @@
 from .user    import Users
-from ._model  import Models 
+from .model  import Models
 from .classes import Classes
 from .images  import Images
 from .trained_model import TrainedModel
