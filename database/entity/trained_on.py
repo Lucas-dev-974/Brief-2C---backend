@@ -1,6 +1,5 @@
-from .model import Base
+from .base import Base
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
 
 class TrainedOn(Base):
     __tablename__ = 'trained_on'

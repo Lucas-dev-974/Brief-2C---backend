@@ -1,7 +1,7 @@
 from database import engine
 
 
-from entity._model        import Models,  Base
+from entity.model        import Models,  Base
 from entity.user          import Users,   Base
 from entity.classes       import Classes, Base
 from entity.images        import Images,  Base
