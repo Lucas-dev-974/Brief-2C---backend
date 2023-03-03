@@ -8,5 +8,5 @@ class Predictions(Base):
     user_feedback    = Column(String)
     img_location     = Column(String)
 
-    id_trained_model = Column(Integer, ForeignKey('trained_models.id'))
-    id_classe        = Column(Integer, ForeignKey('classes.id_classe'))
+    id_trained_model = Column(Integer, ForeignKey('models.id'))
+    classe           = Column(Integer, ForeignKey('classes.id'))

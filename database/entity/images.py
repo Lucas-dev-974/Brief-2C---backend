@@ -6,5 +6,5 @@ class Images(Base):
 
     id         = Column(Integer, primary_key=True)
     location   = Column(String)
-    id_classe  = Column(Integer, ForeignKey('classes.id_classe'))
+    classe  = Column(Integer, ForeignKey('classes.id'))
    

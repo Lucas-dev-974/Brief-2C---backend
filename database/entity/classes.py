@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String
 class Classes(Base):
     __tablename__ = 'classes'
 
-    id_classe      = Column(Integer, primary_key=True)
+    id      = Column(Integer, primary_key=True)
     name    = Column(String, unique=True)
     location_folder = Column(String, unique=True)
 
