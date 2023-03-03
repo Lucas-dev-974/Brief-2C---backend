@@ -11,14 +11,15 @@ def token_verify(token):
     except jwt.DecodeError:
         return False
     
-    
+
 # Authentification
 @hug.post('/login')
 def token_gen_call(username, password):
     """Authentifier et renvoyer un token"""
     global secret_key
     usernameTest = 'admin' # Ici username et pwd à vérif depuis la BDD !
-    pwdTest = 'admin'
+    pwdTest      = 'admin'
+
     if username == usernameTest and password == pwdTest:
         return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')}
     else:
@@ -26,6 +27,6 @@ def token_gen_call(username, password):
     
 token_key_authentication = hug.authentication.token(token_verify)
 
-@hug.get('/api/token_authenticated', requires=token_key_authentication)
+@hug.get('/token_authenticated', requires=token_key_authentication)
 def token_auth_call(user: hug.directives.user):
     return '"Test requête GET ": You are user: {0}'.format(user['user'])

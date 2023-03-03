@@ -1,12 +1,14 @@
+from database.entity   import Models, Classes
+from database.database import session
 from joblib import load
-from PIL import Image
+from PIL    import Image
 import numpy as np
 
 import os
 import io
 
-from database.database import session
-from database.entity   import Models, Classes
+
+
 
 def img_to_array(img, data_format=None, dtype=None):
     x = np.asarray(img, dtype=dtype)
