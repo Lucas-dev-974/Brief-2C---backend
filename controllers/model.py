@@ -64,17 +64,17 @@ def predict(body):
     
     result = {}
     result['prediction'] = predict
-    result['model'] = _model.id
+    result['pred_id'] = preds.id
     return result
 
 @hug.post('/feedback')
 def feedbackPrediction(body):
-    pred_id      = body['model']
-    categorie_id = body['categorie']
+    pred_id      = body['pred_id']
+    categorie_id = body['categorie_id']
 
     prediction = session.query(Predictions).filter_by(id = pred_id).first()
     classe     = session.query(Classes).filter_by(id = categorie_id).first()
-
+    
     prediction.user_feedback = classe.name
 
     session.flush()
