@@ -1,15 +1,61 @@
 import hug
 from hug.middleware import CORSMiddleware
-# from keras.models import load_model
 from database.entity import Models
 import os 
 import falcon
-
-
+import jwt
+import subprocess
 from database.database import session
+from controllers import authentification
 
 api = hug.API(__name__)
-api.http.add_middleware(CORSMiddleware(api))
+api.http.add_middleware(CORSMiddleware(api, allow_origins=['*'])) # allow_origins à restreindre pour le déploiement
+
+api.extend(authentification, '/api/authentication')
+
+# Labo subprocess------
+# subprocess.run()
+
+# python_path = '../.venvtest/Scripts/python.exe'
+
+# script_path = '../testKeras.py'
+
+# command = [python_path, script_path]
+
+# output = subprocess.check_output(command)
+# print(output)
+#---------------------------------------------------
+
+# Authentification ---------------------------------
+# secret_key = "secret_key" # À modif...
+
+def token_verify(token):
+    global secret_key
+    try:
+        return jwt.decode(token, secret_key, algorithms=['HS256'])
+    except jwt.DecodeError:
+        return False
+
+token_key_authentication = hug.authentication.token(token_verify)
+
+# # Authentification
+# @hug.post('/api/login')
+# def token_gen_call(username, password):
+#     """Authentifier et renvoyer un token"""
+#     global secret_key
+#     usernameTest = 'admin' # Ici username et pwd à vérif depuis la BDD !
+#     pwdTest = 'admin'
+#     if username == usernameTest and password == pwdTest:
+#         return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')}
+#     else:
+#         return "Nom d'utilisateur et/ou mot de passe incorrect"
+    
+# Test requête GET authentifié
+@hug.get('/api/token_authenticated', requires=token_key_authentication)
+def token_auth_call(user: hug.directives.user):
+    return '"Test requête GET ": You are user: {0}'.format(user['user'])
+
+#--------------------------------------------------------------------------------------------
 
 def toJson(data, model):
     model_fields = [column.name for column in model.__table__.columns]
@@ -26,7 +72,7 @@ def toJson(data, model):
     return json
 
 
-@hug.get('/api/models') 
+@hug.get('/api/models')
 def models():
     models  = session.query(Models).all()
     json = toJson(models, Models)  
