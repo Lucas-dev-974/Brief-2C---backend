@@ -6,17 +6,20 @@ from database.database import session
 
 from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename
 
+# Donne la liste des models
 @hug.get('/all')
 def models():
     models  = session.query(Models).all()
     return toJson(models, Models) 
 
+# Importation d'un modèle
 @hug.post('/create')
 def create(body, response):
     name = body['name']
     file = body['file']
     classes = None
 
+    # Récup des classes prédites
     if 'classes' in body:
         classes = body['classes'].split(',')
 
@@ -34,7 +37,7 @@ def create(body, response):
             session.add(trained_on)
         session.commit()
 
-    return 'Modèle enregistrer avec succès'
+    return 'Modèle enregistré avec succès'
 
 
 
