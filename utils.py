@@ -88,11 +88,15 @@ import datetime
 def savePredictedImage(file, filename, clas):
     save_path = os.path.abspath(os.path.join(os.getcwd(), 'images'))
     file_path = ''
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     filename = datetime.datetime.fromtimestamp(time.time()).strftime('%H%M%S') + filename
 
     if(clas == 'predicted'):
         save_path = os.path.join(save_path, 'predicted')
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
         file_path = os.path.join(save_path, filename)
     
         with open(file_path, 'wb') as f:
