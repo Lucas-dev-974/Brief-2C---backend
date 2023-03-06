@@ -4,7 +4,7 @@ import hug
 from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
-from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage
+from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename
 
 @hug.get('/all')
 def models():
@@ -55,15 +55,18 @@ def predict(body):
     prediction =  model.predict(image)
 
     img_location = savePredictedImage(img, filename, 'predicted')
-    preds = Predictions(img_location=img_location, id_trained_model=_model.id)
+
+    
+    predict = predictionIS(prediction[0], trained_on)
+
+    classe = getClasseByClassename(predict['classe_name'])
+    print(classe.id)
+    preds = Predictions(img_location=img_location, id_trained_model=_model.id, classe = classe.id)
 
     session.add(preds)
     session.commit()
-    
-    predict = predictionIS(prediction[0], trained_on)
-    
     result = {}
-    result['prediction'] = predict
+    result['prediction'] = predict['result']
     result['pred_id'] = preds.id
     return result
 
