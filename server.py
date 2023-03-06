@@ -1,4 +1,4 @@
-from controllers import authentification, model, classe
+from controllers import authentification, model, classe, stats_globales
 from hug.middleware import CORSMiddleware
 import hug
 
@@ -8,3 +8,4 @@ api.http.add_middleware(CORSMiddleware(api, allow_origins=['*'])) # allow_origin
 api.extend(model, '/api/model')
 api.extend(classe, '/api/classe')
 api.extend(authentification, '/api/authentication')
+api.extend(stats_globales, '/api/stats_globales')
