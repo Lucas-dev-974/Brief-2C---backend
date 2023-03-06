@@ -118,4 +118,12 @@ def predictionIS(preds, classes):
             pred_percent = pred
             index = idx
             
-    return f'L\'image est de la classe {classes[index]} à {round(pred_percent * 100,2)}%'
+    result = {}
+    result['result']      = f'L\'image est de la classe {classes[index]} à {round(pred_percent * 100,2)}%'
+    result['classe_name'] = classes[index]
+
+    return result
+
+
+def getClasseByClassename(name):
+    return session.query(Classes).filter_by(name = name).first()
