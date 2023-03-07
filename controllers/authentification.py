@@ -62,3 +62,16 @@ def token_gen_call(username, password):
 @hug.get('/token_authenticated', requires=token_key_authentication)
 def token_auth_call(user: hug.directives.user):
     return '"Test requête GET ": You are user: {0}'.format(user['user'])
+
+# Ajout d'utilisateur
+@hug.post('/register')
+def register(username, password):
+    # Vérif username n'éxiste pas déjà
+    usernameAlreadyExist = session.query(Users).where(Users.email == username).count()
+    if usernameAlreadyExist == 1:
+        return 'Nom d\'utilisateur déja pris'
+    # Enregistrements des identifiants
+    else :
+        session.add(Users(email = username, password = hashage(password)))
+        session.commit()
+        return 'ok'
