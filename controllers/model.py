@@ -14,13 +14,6 @@ def models():
     models  = session.query(Models).all()
     return toJson(models, Models) 
 
-# Test restrictions d'accès
-# @hug.post('/test', requires=token_key_authentication)
-# def test(request,body, user: hug.directives.user):
-#     print(request.headers)
-#     print("body=>",body['test'])
-#     return user
-
 # Importation d'un modèle
 @hug.post('/create', requires=token_key_authentication)
 def create(body, response):
@@ -47,8 +40,6 @@ def create(body, response):
         session.commit()
 
     return 'Modèle enregistré avec succès'
-
-
 
 @hug.post('/predict')
 def predict(body):
@@ -94,7 +85,8 @@ def feedbackPrediction(body):
     session.flush()
     return 'ok'
 
-@hug.get('/trained_on_classes/{model_id}')
+# Récup des classes entrainé selon le modèle
+@hug.get('/trained_on_classes/{model_id}', requires=token_key_authentication)
 def trainedOnClasses(model_id: int):
     trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
     trained_on = toJson(trained_on, TrainedOn)
@@ -107,3 +99,10 @@ def trainedOnClasses(model_id: int):
         classes.append(entity)
 
     return classes
+
+# Test restrictions d'accès
+# @hug.post('/test', requires=token_key_authentication)
+# def test(request,body, user: hug.directives.user):
+#     print(request.headers)
+#     print("body=>",body['test'])
+#     return user
