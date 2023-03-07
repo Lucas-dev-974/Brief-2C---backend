@@ -65,7 +65,7 @@ def token_auth_call(user: hug.directives.user):
     return '"Test requête GET ": You are user: {0}'.format(user['user'])
 
 # Ajout d'utilisateur
-@hug.post('/register')
+@hug.post('/register', requires=token_key_authentication)
 def register(username, password):
     ''' Enregistrer un nouvel utilisateur  '''
     # Vérif username n'éxiste pas déjà
