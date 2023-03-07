@@ -80,10 +80,21 @@ def feedbackPrediction(body):
 
     prediction = session.query(Predictions).filter_by(id = pred_id).first()
     classe     = session.query(Classes).filter_by(id = categorie_id).first()
-    
+
     prediction.user_feedback = classe.name
-
     session.flush()
-
-
     return 'ok'
+
+@hug.get('/trained_on_classes/{model_id}')
+def trainedOnClasses(model_id: int):
+    trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
+    trained_on = toJson(trained_on, TrainedOn)
+
+    classes = []
+
+    for classe in trained_on:
+        entity = session.query(Classes).filter_by(id = classe['classe_id']).first()
+        entity = { 'name': entity.name }
+        classes.append(entity)
+
+    return classes
