@@ -43,13 +43,13 @@ def token_gen_call(username, password):
     global secret_key
 
     # Vérif que le username est présent dans la BDD
-    usernameExist = session.query(Users.email).where(Users.email == username).count()
+    usernameExist = session.query(Users.username).where(Users.username == username).count()
     if usernameExist == 0:
         return "Nom d'utilisateur et/ou mot de passe incorrect"
     
     elif usernameExist == 1:
         # Récuperer le vrai mdp
-        realPwd = session.query(Users.password).where(Users.email == username).value(Users.password)
+        realPwd = session.query(Users.password).where(Users.username == username).value(Users.password)
 
         # Vérifier la corespondance
         if secrets.compare_digest(realPwd, hashage(password)): # Plus securisé que simple vraiMdp == mdpEntre car temps de comparaison constant (timing attacks)
@@ -61,17 +61,19 @@ def token_gen_call(username, password):
 # Test restriction d'accès
 @hug.get('/token_authenticated', requires=token_key_authentication)
 def token_auth_call(user: hug.directives.user):
+    ''' Test restriction d'accès, fonctionel '''
     return '"Test requête GET ": You are user: {0}'.format(user['user'])
 
 # Ajout d'utilisateur
 @hug.post('/register')
 def register(username, password):
+    ''' Enregistrer un nouvel utilisateur  '''
     # Vérif username n'éxiste pas déjà
-    usernameAlreadyExist = session.query(Users).where(Users.email == username).count()
+    usernameAlreadyExist = session.query(Users).where(Users.username == username).count()
     if usernameAlreadyExist == 1:
         return 'Nom d\'utilisateur déja pris'
     # Enregistrements des identifiants
     else :
-        session.add(Users(email = username, password = hashage(password)))
+        session.add(Users(username = username, password = hashage(password)))
         session.commit()
         return 'ok'
