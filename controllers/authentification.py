@@ -2,6 +2,7 @@ import hug
 import jwt
 from hashlib import sha512
 import secrets
+import datetime
 
 from database.database import session
 from database.entity import Users
@@ -30,7 +31,7 @@ def hashage(mdp:str):
 
 # Variables globales --------------------------------------------
 
-secret_key = "1bc3851624fa399d46350929f20dd5610d0aa5994b621d69"
+secret_key = "1bc3851624fa399d46350929f20dd5610d0aa5994b621d69" # Cacher dans le VENV !
 
 token_key_authentication = hug.authentication.token(token_verify)
 
@@ -53,16 +54,9 @@ def token_gen_call(username, password):
 
         # Vérifier la corespondance
         if secrets.compare_digest(realPwd, hashage(password)): # Plus securisé que simple vraiMdp == mdpEntre car temps de comparaison constant (timing attacks)
-            return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')}
+            return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')} # ", 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=30)" => Expiration du token
         else:
             return "Nom d'utilisateur et/ou mot de passe incorrect"
-
-
-# Test restriction d'accès
-@hug.get('/token_authenticated', requires=token_key_authentication)
-def token_auth_call(user: hug.directives.user):
-    ''' Test restriction d'accès, fonctionel '''
-    return '"Test requête GET ": You are user: {0}'.format(user['user'])
 
 # Ajout d'utilisateur
 @hug.post('/register', requires=token_key_authentication)
@@ -77,3 +71,14 @@ def register(username, password):
         session.add(Users(username = username, password = hashage(password)))
         session.commit()
         return 'ok'
+
+@hug.get('/check', requires=token_key_authentication)
+def authenticationCheck():
+    ''' Vérifier si l'utilisateur est connecté '''
+    return 'ok'
+
+# Test restriction d'accès
+@hug.get('/token_authenticated', requires=token_key_authentication)
+def token_auth_call(user: hug.directives.user):
+    ''' Test restriction d'accès, fonctionel '''
+    return '"Test requête GET ": You are user: {0}'.format(user['user'])
