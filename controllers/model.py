@@ -4,6 +4,8 @@ import hug
 from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
+from controllers.authentification import token_key_authentication
+
 from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename
 
 # Donne la liste des models
@@ -12,8 +14,15 @@ def models():
     models  = session.query(Models).all()
     return toJson(models, Models) 
 
+# Test restrictions d'accès
+# @hug.post('/test', requires=token_key_authentication)
+# def test(request,body, user: hug.directives.user):
+#     print(request.headers)
+#     print("body=>",body['test'])
+#     return user
+
 # Importation d'un modèle
-@hug.post('/create')
+@hug.post('/create', requires=token_key_authentication)
 def create(body, response):
     name = body['name']
     file = body['file']
