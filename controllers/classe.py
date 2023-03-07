@@ -5,7 +5,7 @@ from controllers.authentification import token_key_authentication
 
 import hug
 
-@hug.get('/all', requires=token_key_authentication)
+@hug.get('/all') # , requires=token_key_authentication
 def getClasses():
     classes  = session.query(Classes).all()
     return toJson(classes, Classes)
