@@ -123,7 +123,13 @@ def trainedOnClasses(model_id: int):
 
     return classes
 
-@hug.get('/bad_predictions')
+@hug.get('/bad_predictions/{model_id}')
 def badPredictions(model_id: int):
-    bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
-    print(len(bad_predictions))
+    # bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
+
+    # print(len(bad_predictions))
+
+    predictions = session.query(Predictions).where(Predictions.model_id == model_id, Predictions.user_feedback != None).all()
+    jsoned = toJson(predictions, Predictions)
+    print(jsoned)
+    return jsoned
