@@ -7,6 +7,8 @@ import datetime
 from database.database import session
 from database.entity import Users
 
+from database.utils import getConfig
+
 # Fonctions-------------------------------------------------------
 
 # Vérifie le token => précisement comment ??
@@ -31,7 +33,7 @@ def hashage(mdp:str):
 
 # Variables globales --------------------------------------------
 
-secret_key = "1bc3851624fa399d46350929f20dd5610d0aa5994b621d69" # Cacher dans le VENV !
+secret_key = getConfig('secretKey')
 
 token_key_authentication = hug.authentication.token(token_verify)
 
