@@ -15,6 +15,7 @@ from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, pred
 @hug.get('/all')
 def models():
     models  = session.query(Models).all()
+    print(models)
     return toJson(models, Models) 
 
 # Importation d'un modèle
@@ -157,6 +158,15 @@ def recupMetrics(model_id: int):
     # return location
     # print("--------------------=>", test_loss)
     return {"test_loss": test_loss, "test_accuracy": test_accuracy, "val_loss": val_loss, "val_accuracy": val_accuracy}
+
+@hug.get('/pieData/{model_id}', requires=token_key_authentication)
+def recupPieData(model_id:int):
+
+    # Récup data depuis la BDD
+    nbBonnesPred = session.query(Predictions).where(Predictions.model_id == model_id).where(Predictions.user_feedback == None).count()
+    nbMauvaisesPred = session.query(Predictions).where(Predictions.model_id == model_id).where(Predictions.user_feedback != None).count()
+
+    return { 'nbMauvaisesPred' : nbMauvaisesPred, 'nbBonnesPred' : nbBonnesPred }
 
 # Test restrictions d'accès
 # @hug.post('/test', requires=token_key_authentication)
