@@ -138,25 +138,7 @@ def recupMetrics(model_id: int):
     val_loss = session.query(Loss).where(Loss.validation == True and Loss.model_id == model_id).values(Loss.value)
     test_accuracy = session.query(Accuracy).where(Accuracy.validation == False and Accuracy.model_id == model_id).values(Accuracy.value)
     val_accuracy = session.query(Accuracy).where(Accuracy.validation == True and Accuracy.model_id == model_id).values(Accuracy.value)
-    
-    
-    # Sinon => .evaluate
-    # location = session.query(Models).where(Models.id == model_id).value(Models.location)
-    # model = loadModel(location)
-    # print("type================================>",type(model))
 
-    # dataset = tf.keras.utils.image_dataset_from_directory(
-    #     "./dataset/",
-    #     seed=123,
-    #     image_size=(224,224)
-    # )
-
-    # print(dataset)
-    # test_loss, test_accuracy = model.evaluate(x=dataset)
-    # return str(type(model))
-
-    # return location
-    # print("--------------------=>", test_loss)
     return {"test_loss": test_loss, "test_accuracy": test_accuracy, "val_loss": val_loss, "val_accuracy": val_accuracy}
 
 @hug.get('/pieData/{model_id}', requires=token_key_authentication)
@@ -174,7 +156,10 @@ def recupPieData(model_id:int):
 #     print(request.headers)
 #     print("body=>",body['test'])
 #     return user
+
 @hug.get('/bad_predictions')
 def badPredictions(model_id: int):
-    bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
-    print(len(bad_predictions))
+    predictions = session.query(Predictions).where(Predictions.model_id == model_id, Predictions.user_feedback != None).all()
+    jsoned = toJson(predictions, Predictions)
+    print(jsoned)
+    return jsoned

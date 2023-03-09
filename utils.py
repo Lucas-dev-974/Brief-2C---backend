@@ -43,9 +43,7 @@ def toJson(data, model):
     model_fields = [column.name for column in model.__table__.columns]
     json = []
 
-    print(model_fields)
     for dta in data:
-
         model = {}
         for fields in model_fields:
             model[fields] = getattr(dta, fields)
