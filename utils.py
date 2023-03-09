@@ -1,4 +1,4 @@
-from database.entity   import Models, Classes
+from database.entity   import Models, Classes, Images
 from database.database import session
 from joblib import load
 from PIL    import Image
@@ -93,6 +93,7 @@ def savePredictedImage(file, filename, clas):
 
     filename = datetime.datetime.fromtimestamp(time.time()).strftime('%H%M%S') + filename
 
+
     if(clas == 'predicted'):
         save_path = os.path.join(save_path, 'predicted')
         if not os.path.exists(save_path):
@@ -131,3 +132,27 @@ def predictionIS(preds, classes):
 
 def getClasseByClassename(name):
     return session.query(Classes).filter_by(name = name).first()
+
+
+import json
+from sqlalchemy.orm import class_mapper
+def Serializer(query):
+    # Créer une liste de dictionnaires pour les résultats sérialisés
+    serialized_results = []
+    for r in query:
+        # Accéder aux propriétés de chaque relation et les inclure dans le dictionnaire
+        serialized_result = {}
+        for prop in class_mapper(r.__class__).iterate_properties:
+            if hasattr(r, prop.key):
+                if prop.key != 'password': # Exclure la propriété "password" pour des raisons de sécurité
+                    val = getattr(r, prop.key)
+                    if prop.uselist:
+                        print('serialized_result', prop.key)
+                        serialized_result[prop.key] = [dict(p) for p in val]
+                    else:
+                        serialized_result[prop.key] = dict(val)
+        serialized_results.append(serialized_result)
+
+    # Sérialiser les résultats en JSON
+    serialized_results_json = json.dumps(serialized_results)
+    return serialized_results_json
