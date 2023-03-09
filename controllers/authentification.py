@@ -2,6 +2,7 @@ import hug
 import jwt
 from hashlib import sha512
 import secrets
+import datetime
 
 from database.database import session
 from database.entity import Users
@@ -30,7 +31,7 @@ def hashage(mdp:str):
 
 # Variables globales --------------------------------------------
 
-secret_key = "1bc3851624fa399d46350929f20dd5610d0aa5994b621d69"
+secret_key = "1bc3851624fa399d46350929f20dd5610d0aa5994b621d69" # Cacher dans le VENV !
 
 token_key_authentication = hug.authentication.token(token_verify)
 
@@ -43,35 +44,41 @@ def token_gen_call(username, password):
     global secret_key
 
     # Vérif que le username est présent dans la BDD
-    usernameExist = session.query(Users.email).where(Users.email == username).count()
+    usernameExist = session.query(Users.username).where(Users.username == username).count()
     if usernameExist == 0:
         return "Nom d'utilisateur et/ou mot de passe incorrect"
     
     elif usernameExist == 1:
         # Récuperer le vrai mdp
-        realPwd = session.query(Users.password).where(Users.email == username).value(Users.password)
+        realPwd = session.query(Users.password).where(Users.username == username).value(Users.password)
 
         # Vérifier la corespondance
         if secrets.compare_digest(realPwd, hashage(password)): # Plus securisé que simple vraiMdp == mdpEntre car temps de comparaison constant (timing attacks)
-            return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')}
+            return {"token" : jwt.encode({'user': username}, secret_key, algorithm='HS256')} # ", 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=30)" => Expiration du token
         else:
             return "Nom d'utilisateur et/ou mot de passe incorrect"
 
-
-# Test restriction d'accès
-@hug.get('/token_authenticated', requires=token_key_authentication)
-def token_auth_call(user: hug.directives.user):
-    return '"Test requête GET ": You are user: {0}'.format(user['user'])
-
 # Ajout d'utilisateur
-@hug.post('/register')
+@hug.post('/register', requires=token_key_authentication)
 def register(username, password):
+    ''' Enregistrer un nouvel utilisateur  '''
     # Vérif username n'éxiste pas déjà
-    usernameAlreadyExist = session.query(Users).where(Users.email == username).count()
+    usernameAlreadyExist = session.query(Users).where(Users.username == username).count()
     if usernameAlreadyExist == 1:
         return 'Nom d\'utilisateur déja pris'
     # Enregistrements des identifiants
     else :
-        session.add(Users(email = username, password = hashage(password)))
+        session.add(Users(username = username, password = hashage(password)))
         session.commit()
         return 'ok'
+
+@hug.get('/check', requires=token_key_authentication)
+def authenticationCheck():
+    ''' Vérifier si l'utilisateur est connecté '''
+    return 'ok'
+
+# Test restriction d'accès
+@hug.get('/token_authenticated', requires=token_key_authentication)
+def token_auth_call(user: hug.directives.user):
+    ''' Test restriction d'accès, fonctionel '''
+    return '"Test requête GET ": You are user: {0}'.format(user['user'])

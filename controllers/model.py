@@ -5,6 +5,7 @@ from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
 from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
+from controllers.authentification import token_key_authentication
 
 # Donne la liste des models
 @hug.get('/all')
@@ -13,7 +14,7 @@ def models():
     return toJson(models, Models) 
 
 # Importation d'un modèle
-@hug.post('/create')
+@hug.post('/create', requires=token_key_authentication)
 def create(body, response):
     name = body['name']
     file = body['file']
@@ -38,8 +39,6 @@ def create(body, response):
         session.commit()
 
     return 'Modèle enregistré avec succès'
-
-
 
 @hug.post('/predict')
 def predict(body):
@@ -110,7 +109,7 @@ def feedbackPrediction(body):
 
 
 # Récup des classes entrainé selon le modèle
-@hug.get('/trained_on_classes/{model_id}')
+@hug.get('/trained_on_classes/{model_id}', requires=token_key_authentication)
 def trainedOnClasses(model_id: int):
     trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
     trained_on = toJson(trained_on, TrainedOn)
@@ -128,6 +127,3 @@ def trainedOnClasses(model_id: int):
 def badPredictions(model_id: int):
     bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
     print(len(bad_predictions))
-
-
-
