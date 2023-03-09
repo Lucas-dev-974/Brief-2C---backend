@@ -4,8 +4,12 @@ import hug
 from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
-from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
+from database.entity.loss import Loss
+from database.entity.accuracy import Accuracy
+
 from controllers.authentification import token_key_authentication
+
+from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
 
 # Donne la liste des models
 @hug.get('/all')
@@ -121,14 +125,24 @@ def trainedOnClasses(model_id: int):
         entity = { 'name': entity.name }
         classes.append(entity)
 
+    # return trained_on
     return classes
 
-@hug.get('/bad_predictions/{model_id}')
+# Récup des metrics
+@hug.get('/metrics/{model_id}', requires=token_key_authentication)
+def recupMetrics(model_id: int):
+    
+    # Récup des metrics depuis BDD
+    test_loss = session.query(Loss).where(Loss.validation==False and Loss.model_id == model_id).values(Loss.value)
+    val_loss = session.query(Loss).where(Loss.validation == True and Loss.model_id == model_id).values(Loss.value)
+    test_accuracy = session.query(Accuracy).where(Accuracy.validation == False and Accuracy.model_id == model_id).values(Accuracy.value)
+    val_accuracy = session.query(Accuracy).where(Accuracy.validation == True and Accuracy.model_id == model_id).values(Accuracy.value)
+
+    return {"test_loss": test_loss, "test_accuracy": test_accuracy, "val_loss": val_loss, "val_accuracy": val_accuracy}
+
+
+@hug.get('/bad_predictions')
 def badPredictions(model_id: int):
-    # bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
-
-    # print(len(bad_predictions))
-
     predictions = session.query(Predictions).where(Predictions.model_id == model_id, Predictions.user_feedback != None).all()
     jsoned = toJson(predictions, Predictions)
     print(jsoned)
