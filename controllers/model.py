@@ -1,22 +1,20 @@
 import falcon
 import hug
 
-from database.entity   import Models, TrainedOn, Predictions, Classes
+from database.entity   import Models, TrainedOn, Predictions, Classes, Images
 from database.database import session
 
 from database.entity.loss import Loss
 from database.entity.accuracy import Accuracy
 
 from controllers.authentification import token_key_authentication
-
-from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
+import os
+from utils import getModelTrainClasses, toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
 
 # Donne la liste des models
 @hug.get('/all')
 def models():
-    models  = session.query(Models).all()
-    print(models)
-    return toJson(models, Models) 
+    return toJson(session.query(Models).all(), Models)
 
 # Importation d'un modèle
 @hug.post('/create', requires=token_key_authentication)
@@ -91,43 +89,10 @@ def feedbackPrediction(body):
     session.commit()
     return 'ok'
 
-# import json
-# @hug.get('/trained_on_classes/{model_id}')
-# def trainedOnClasses(model_id: int):
-#     trainedon  = session.query(Models).where(Models.id == model_id).join(TrainedOn).values()
-#     print('trainedon', trainedon)
-#     trained = Serializer(trainedon)
-    
-#     print(trained)
-
-#     trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
-#     trained_on = toJson(trained_on, TrainedOn)
-
-#     classes = []
-
-#     for classe in trained_on:
-#         entity = session.query(Classes).filter_by(id = classe['classe_id']).first()
-#         entity = { 'name': entity.name }
-#         classes.append(entity)
-
-#     return classes
-
-
 # Récup des classes entrainé selon le modèle
-@hug.get('/trained_on_classes/{model_id}', requires=token_key_authentication)
+@hug.get('/trained_on_classes/{model_id}')
 def trainedOnClasses(model_id: int):
-    trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
-    trained_on = toJson(trained_on, TrainedOn)
-
-    classes = []
-
-    for classe in trained_on:
-        entity = session.query(Classes).filter_by(id = classe['classe_id']).first()
-        entity = { 'name': entity.name }
-        classes.append(entity)
-
-    # return trained_on
-    return classes
+    return getModelTrainClasses(model_id)
 
 # Récup des metrics
 @hug.get('/metrics/{model_id}', requires=token_key_authentication)
@@ -150,12 +115,6 @@ def recupPieData(model_id:int):
 
     return { 'nbMauvaisesPred' : nbMauvaisesPred, 'nbBonnesPred' : nbBonnesPred }
 
-# Test restrictions d'accès
-# @hug.post('/test', requires=token_key_authentication)
-# def test(request,body, user: hug.directives.user):
-#     print(request.headers)
-#     print("body=>",body['test'])
-#     return user
 
 @hug.get('/bad_predictions')
 def badPredictions(model_id: int):
@@ -163,3 +122,17 @@ def badPredictions(model_id: int):
     jsoned = toJson(predictions, Predictions)
     print(jsoned)
     return jsoned
+
+
+@hug.get('/api/{file_id}')
+def media(file_id: int):
+    image = session.query(Images).filter_by(id=file_id).first()
+
+    if not image:
+        return 'Désoler l\'image n\'existe pas'
+    
+    base_path = os.path.abspath(__file__)
+    folder_path = os.path.join(base_path, 'images')
+    file_path   = os.path.join(folder_path, image.location)
+    
+    return open(file_path, 'rb')
