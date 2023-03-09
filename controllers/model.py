@@ -4,7 +4,7 @@ import hug
 from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
-from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename
+from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
 
 # Donne la liste des models
 @hug.get('/all')
@@ -50,6 +50,7 @@ def predict(body):
 
     _model     = session.query(Models).filter_by(id=model_id).first()
     trained_on = session.query(TrainedOn).filter_by(model_id=_model.id)
+
     trained_on = toJson(trained_on, TrainedOn)
 
     model      = loadModel(_model.location)
@@ -59,12 +60,11 @@ def predict(body):
 
     img_location = savePredictedImage(img, filename, 'predicted')
 
-    
     predict = predictionIS(prediction[0], trained_on)
 
     classe = getClasseByClassename(predict['classe_name'])
-    print(classe.id)
-    preds = Predictions(img_location=img_location, id_trained_model=_model.id, classe = classe.id)
+    
+    preds  = Predictions(img_location=img_location, model_id=_model.id, classe_id=classe.id)
 
     session.add(preds)
     session.commit()
@@ -82,9 +82,34 @@ def feedbackPrediction(body):
     classe     = session.query(Classes).filter_by(id = categorie_id).first()
 
     prediction.user_feedback = classe.name
+
     session.flush()
+    session.commit()
     return 'ok'
 
+# import json
+# @hug.get('/trained_on_classes/{model_id}')
+# def trainedOnClasses(model_id: int):
+#     trainedon  = session.query(Models).where(Models.id == model_id).join(TrainedOn).values()
+#     print('trainedon', trainedon)
+#     trained = Serializer(trainedon)
+    
+#     print(trained)
+
+#     trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
+#     trained_on = toJson(trained_on, TrainedOn)
+
+#     classes = []
+
+#     for classe in trained_on:
+#         entity = session.query(Classes).filter_by(id = classe['classe_id']).first()
+#         entity = { 'name': entity.name }
+#         classes.append(entity)
+
+#     return classes
+
+
+# Récup des classes entrainé selon le modèle
 @hug.get('/trained_on_classes/{model_id}')
 def trainedOnClasses(model_id: int):
     trained_on = session.query(TrainedOn).filter_by(model_id = model_id).all()
@@ -98,3 +123,11 @@ def trainedOnClasses(model_id: int):
         classes.append(entity)
 
     return classes
+
+@hug.get('/bad_predictions')
+def badPredictions(model_id: int):
+    bad_predictions = session.query(Predictions).where(Predictions.user_feedback != None).where(Predictions.id_trained_model == model_id).all()
+    print(len(bad_predictions))
+
+
+
