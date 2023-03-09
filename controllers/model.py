@@ -4,9 +4,17 @@ import hug
 from database.entity   import Models, TrainedOn, Predictions, Classes
 from database.database import session
 
+from database.entity.loss import Loss
+from database.entity.accuracy import Accuracy
+
 from controllers.authentification import token_key_authentication
 
 from utils import toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename
+
+from sqlalchemy import insert
+
+# import tensorflow as tf
+# from tensorflow import *
 
 # Donne la liste des models
 @hug.get('/all')
@@ -98,7 +106,38 @@ def trainedOnClasses(model_id: int):
         entity = { 'name': entity.name }
         classes.append(entity)
 
+    # return trained_on
     return classes
+
+# Récup des metrics
+@hug.get('/metrics/{model_id}', requires=token_key_authentication)
+def recupMetrics(model_id: int):
+    
+    # Récup des metrics depuis BDD
+    test_loss = session.query(Loss).where(Loss.validation==False and Loss.model_id == model_id).values(Loss.value)
+    val_loss = session.query(Loss).where(Loss.validation == True and Loss.model_id == model_id).values(Loss.value)
+    test_accuracy = session.query(Accuracy).where(Accuracy.validation == False and Accuracy.model_id == model_id).values(Accuracy.value)
+    val_accuracy = session.query(Accuracy).where(Accuracy.validation == True and Accuracy.model_id == model_id).values(Accuracy.value)
+    
+    
+    # Sinon => .evaluate
+    # location = session.query(Models).where(Models.id == model_id).value(Models.location)
+    # model = loadModel(location)
+    # print("type================================>",type(model))
+
+    # dataset = tf.keras.utils.image_dataset_from_directory(
+    #     "./dataset/",
+    #     seed=123,
+    #     image_size=(224,224)
+    # )
+
+    # print(dataset)
+    # test_loss, test_accuracy = model.evaluate(x=dataset)
+    # return str(type(model))
+
+    # return location
+    # print("--------------------=>", test_loss)
+    return {"test_loss": test_loss, "test_accuracy": test_accuracy, "val_loss": val_loss, "val_accuracy": val_accuracy}
 
 # Test restrictions d'accès
 # @hug.post('/test', requires=token_key_authentication)
