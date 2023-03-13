@@ -1,4 +1,4 @@
-from database.entity   import Models, Classes, Images
+from database.entity   import Models, Classes, Images, Predictions
 from database.database import session
 from joblib import load
 from PIL    import Image
@@ -91,7 +91,7 @@ def savePredictedImage(file, filename, clas):
 
     filename = datetime.datetime.fromtimestamp(time.time()).strftime('%H%M%S') + filename
 
-
+    image = None
     if(clas == 'predicted'):
         save_path = os.path.join(save_path, 'predicted')
         if not os.path.exists(save_path):
@@ -99,9 +99,11 @@ def savePredictedImage(file, filename, clas):
         file_path = os.path.join(save_path, filename)
     
         with open(file_path, 'wb') as f:
-            f.write(file)
-
-    return file_path
+            f.write(file)   
+        image = Images(location=clas + '/' + filename)
+        session.add(image)
+        session.commit()
+    return image
 
 def getClasses(trainedon):
     classes = []
@@ -111,6 +113,17 @@ def getClasses(trainedon):
         print('classe: -- ', classe)
         classes.append(classe.name)
     return sorted(classes)
+
+from database.entity import TrainedOn
+
+def getModelTrainClasses(model):
+    if(isinstance(model, int)):
+        model = session.query(Models).filter_by(id=model).first()
+
+    classes = []
+    for trained_on in model.trained_on_classes:
+        classes.append(trained_on.classe.name)
+    return classes
 
 def predictionIS(preds, classes):
     pred_percent = 0
@@ -154,3 +167,39 @@ def Serializer(query):
     # Sérialiser les résultats en JSON
     serialized_results_json = json.dumps(serialized_results)
     return serialized_results_json
+
+def validator(body: dict, must_includes: list):
+    required = True
+    for include in must_includes:
+        if not body.get(include):
+            required = False
+    return required
+
+
+# Récupère un modèle en BDD via son id
+# Charge le fichier du modèle via sa location
+# Récupère les classes d'entrainement du model 
+def loadMD(model_id: int):
+    _model  = session.query(Models).filter_by(id=model_id).first()
+    model   = loadModel(_model.location)
+    classes = getModelTrainClasses(_model)
+    return _model, model, classes
+    
+def makePrediction(model, _model, image_load, image, img_name, classes):
+    # Charge l'entité model puis le model en tant que fichier et récupère les classes sur lequels le model à été entrainer
+    prediction =  model.predict(image_load)
+
+    # Sauvegarde l'image de la prédiction en bdd et sur le serveur 
+    image = savePredictedImage(image, img_name, 'predicted')
+
+    # Fait une prédiction
+    predict = predictionIS(prediction[0], classes)
+    
+    # TODO Changer de place l'enregistrement de la prédiction dans feedbackPrediction
+    # Récupère l'entité de la classe prédite par son nom et créer une nouvelle prédiction
+    classe  = getClasseByClassename(predict['classe_name'])
+    preds   = Predictions(image_id=image.id, model_id=_model.id, classe_id=classe.id)
+    session.add(preds)
+    session.commit()
+
+    return predict, preds
