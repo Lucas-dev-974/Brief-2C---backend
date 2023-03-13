@@ -6,10 +6,10 @@ class Accuracy(Base):
     __tablename__ = "accuracy"
 
     id = Column(Integer, primary_key=True)
-    epoque = Column(Integer)
-    value = Column(Float)
-    model_id = Column(Integer, ForeignKey('models.id'))
+    epoque     = Column(Integer)
+    value      = Column(Float)
+    model_id   = Column(Integer, ForeignKey('models.id'))
     validation = Column(Boolean)
-
+    
     # À verif fonctionnement=>
     # UniqueConstraint('epoque','model_id')

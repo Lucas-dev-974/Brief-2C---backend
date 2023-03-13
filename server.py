@@ -1,4 +1,4 @@
-from controllers import authentification, model, classe, stats_globales
+from controllers import authentification, model, classe, stats_globales, media
 from hug.middleware import CORSMiddleware
 import hug
 
@@ -9,3 +9,4 @@ api.extend(model, '/api/model')
 api.extend(classe, '/api/classe')
 api.extend(authentification, '/api/authentication')
 api.extend(stats_globales, '/api/stats_globales')
+api.extend(media, '/api/media')

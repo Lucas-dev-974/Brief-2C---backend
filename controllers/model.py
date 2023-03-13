@@ -9,7 +9,7 @@ from database.entity.accuracy import Accuracy
 
 from controllers.authentification import token_key_authentication
 import os
-from utils import getModelTrainClasses, toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, Serializer
+from utils import loadMD, makePrediction, getModelTrainClasses, toJson, saveModelAsFile,loadImage, loadModel, getClasses, predictionIS, savePredictedImage, getClasseByClassename, validator
 
 # Donne la liste des models
 @hug.get('/all')
@@ -43,56 +43,59 @@ def create(body, response):
 
     return 'Modèle enregistré avec succès'
 
+
+
+
 @hug.post('/predict')
-def predict(body):
+def predict(body: dict):
+    # Vérification si les champs requis sont bien dans la requête
+    if not validator(body, ['model_id', 'img', 'filename']):
+        return 'Veuillez renseigner les champs id model, image et nom de l\'image'
+    
+    # Récupèrage des paramètre de requis
     model_id = body['model_id']
     img      = body['img']
     filename = body['filename']
     image    = loadImage(img)
-
-    _model     = session.query(Models).filter_by(id=model_id).first()
-    trained_on = session.query(TrainedOn).filter_by(model_id=_model.id)
-
-    trained_on = toJson(trained_on, TrainedOn)
-
-    model      = loadModel(_model.location)
-    trained_on = getClasses(trained_on)
-
-    prediction =  model.predict(image)
-
-    img_location = savePredictedImage(img, filename, 'predicted')
-
-    predict = predictionIS(prediction[0], trained_on)
-
-    classe = getClasseByClassename(predict['classe_name'])
     
-    preds  = Predictions(img_location=img_location, model_id=_model.id, classe_id=classe.id)
+    # Récuprère l'entité du model puis le modèle charger et les classes d'entrainement du modèle
+    _model, model, classes = loadMD(model_id)
+    
+    # Execute la prédiction sur l'image donner et enregistre l'image sur le serveur et dans la BDD -> + sauvegarde de la prédiction puis retourne la prediction et son entité
+    predict, preds = makePrediction(model, _model, image, img, filename, classes)
 
-    session.add(preds)
-    session.commit()
-    result = {}
-    result['prediction'] = predict['result']
-    result['pred_id'] = preds.id
-    return result
+    return { "prediction": predict['result'], 'pred_id':    preds.id }
 
 @hug.post('/feedback')
 def feedbackPrediction(body):
+    # Vérification si les champs requis sont bien dans la requête
+    if not validator(body, ['pred_id', 'categorie_id']):
+        return 'Veuillez renseigner les champs id de la prediciton et id de la bonne classe'
+    
+    # Récupèrage des paramètre de requis
     pred_id      = body['pred_id']
     categorie_id = body['categorie_id']
 
+    # Récuperation de la prediction et de la classe via leurs ID
     prediction = session.query(Predictions).filter_by(id = pred_id).first()
     classe     = session.query(Classes).filter_by(id = categorie_id).first()
 
+    # Si la classe n'existe pas alors retourne une erreur 
+    if not classe:
+        return 'Désoler la classe n\'existe pas !'
+    
+    # Mise à jour de la prediction en BDD 
     prediction.user_feedback = classe.name
-
     session.flush()
     session.commit()
-    return 'ok'
+    return 'Prediction mis à jour'
 
 # Récup des classes entrainé selon le modèle
 @hug.get('/trained_on_classes/{model_id}')
 def trainedOnClasses(model_id: int):
-    return getModelTrainClasses(model_id)
+    classes = getModelTrainClasses(model_id)
+    print(classes)
+    return classes
 
 # Récup des metrics
 @hug.get('/metrics/{model_id}', requires=token_key_authentication)
@@ -116,23 +119,15 @@ def recupPieData(model_id:int):
     return { 'nbMauvaisesPred' : nbMauvaisesPred, 'nbBonnesPred' : nbBonnesPred }
 
 
-@hug.get('/bad_predictions')
+@hug.get('/bad_predictions/{model_id}')
 def badPredictions(model_id: int):
-    predictions = session.query(Predictions).where(Predictions.model_id == model_id, Predictions.user_feedback != None).all()
+    predictions = session.query(Predictions).where(Predictions.model_id == model_id, Predictions.user_feedback != None).join(Classes).all()
     jsoned = toJson(predictions, Predictions)
+
+    for json in jsoned:
+        json['classe'] = predictions[0].classe.name
+        
     print(jsoned)
     return jsoned
 
 
-@hug.get('/api/{file_id}')
-def media(file_id: int):
-    image = session.query(Images).filter_by(id=file_id).first()
-
-    if not image:
-        return 'Désoler l\'image n\'existe pas'
-    
-    base_path = os.path.abspath(__file__)
-    folder_path = os.path.join(base_path, 'images')
-    file_path   = os.path.join(folder_path, image.location)
-    
-    return open(file_path, 'rb')
